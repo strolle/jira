@@ -1,0 +1,8 @@
+{
+"spreadsheetName": "jira",
+"jql": "project = MT",
+"storyPointField": "customfield_10105",
+"projectField": "customfield_10201",
+"proj1String": "AllaStudier",
+"proj2String": "MetroJobb"
+}
