@@ -44,8 +44,8 @@ public class UpdateJiraStats {
             System.out.println("Parse tickets");
             List<Ticket> ticketsInDocument = SpreadsheetUtil.parseTicketSheet(ticketsSheet);
             System.out.println("Start parsing document");
-            //updateEditedTickets(ticketsSheet, ticketsInDocument, false);
-            updateAllTickets(ticketsSheet);
+            updateEditedTickets(ticketsSheet, ticketsInDocument, false);
+            //updateAllTickets(ticketsSheet);
             System.out.println("Tickets updated");
 
             ticketsInDocument = SpreadsheetUtil.parseTicketSheet(ticketsSheet);
