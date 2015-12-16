@@ -33,14 +33,13 @@ public class StatUtil {
         Map<String, Integer> proj2StorysMap = new HashMap<>();
         Map<String, Double> proj2DevTimeMap = new HashMap<>();
 
+        //Add current period first
+        String currentPeriodDate = getPeriodString(period, new DateTime());
+        storyPointMap.put(currentPeriodDate, 0.);
+         
         for (Ticket ticket : tickets) {
             if (ticket.getResolvedDate() != null) {
-                String periodDate = null;
-                if (period.equals(StatPeriod.WEEK)) {
-                    periodDate = new DateTime(ticket.getResolvedDate()).withDayOfWeek(DateTimeConstants.MONDAY).toString("yyyy-MM-dd");
-                } else {
-                    periodDate = new DateTime(ticket.getResolvedDate()).withDayOfMonth(1).toString("yyyy-MM-dd");
-                }
+                String periodDate = getPeriodString(period, ticket.getResolvedDate());
                 Double sp = storyPointMap.get(periodDate);
                 sp = sp != null ? sp : 0.;
                 sp += ticket.getStorypoint();
@@ -94,7 +93,7 @@ public class StatUtil {
             List<String> row = new ArrayList<>();
             row.add(dateString);
             row.add("" + storyPointMap.get(dateString));
-            row.add("" + storysMap.get(dateString));
+            row.add("" + (storysMap.get(dateString) != null ? storysMap.get(dateString) : 0));
             row.add("" + (proj2StoryPointMap.get(dateString) != null ? proj2StoryPointMap.get(dateString) : 0.));
             row.add("" + (proj2StorysMap.get(dateString) != null ? proj2StorysMap.get(dateString) : 0.));
             row.add("" + (proj1StoryPointMap.get(dateString) != null ? proj1StoryPointMap.get(dateString) : 0.));
@@ -106,6 +105,15 @@ public class StatUtil {
         }
 
         return result;
+    }
+    private static String getPeriodString(StatPeriod period, DateTime dateTime) {
+        String periodDate = null;
+        if (period.equals(StatPeriod.WEEK)) {
+            periodDate = dateTime.withDayOfWeek(DateTimeConstants.MONDAY).toString("yyyy-MM-dd");
+        } else {
+            periodDate = dateTime.withDayOfMonth(1).toString("yyyy-MM-dd");
+        }
+        return periodDate;
     }
     // [0] Time to release
     // [1] Time to resolved

@@ -72,8 +72,14 @@ public class Ticket {
     }
 
     private double getDouble(String value) {
-        if (value != null)
-            return Double.parseDouble(value);
+        if (value != null){
+            try{
+                value = value.replace(',', '.');
+                return Double.parseDouble(value);
+            } catch (Exception e){
+                ;
+            }
+        }
         return 0.;
     }
 
@@ -246,9 +252,9 @@ public class Ticket {
 
     @Override
     public String toString() {
-        return "Ticket [id=" + id + ", storypoint=" + storypoint + ", isAs=" + isProj1 + ", isMj=" + isProj2 + ", analysisStartDate=" + analysisStartDate
-                + ", resolvedDate=" + resolvedDate + ", closedDate=" + closedDate + ", timeInAnalysis=" + timeInAnalysis + ", timeInWaitingForDev="
-                + timeInWaitingForDev + ", timeInProgress=" + timeInProgress + ", timeInDevTest=" + timeInDevTest + ", timeInAcceptTest=" + timeInAcceptTest
-                + ", timeInWaitingForStage=" + timeInWaitingForStage + ", timeInWaitingForRelease=" + timeInWaitingForRelease + "]";
+        return "Ticket\n=====\nid=" + id + "\nstorypoint=" + storypoint + "\nisAs=" + isProj1 + "\nisMj=" + isProj2 + "\nanalysisStartDate=" + analysisStartDate
+                + "\nresolvedDate=" + resolvedDate + "\nclosedDate=" + closedDate + "\ntimeInAnalysis=" + timeInAnalysis + "\ntimeInWaitingForDev="
+                + timeInWaitingForDev + "\ntimeInProgress=" + timeInProgress + "\ntimeInDevTest=" + timeInDevTest + "\ntimeInAcceptTest=" + timeInAcceptTest
+                + "\ntimeInWaitingForStage=" + timeInWaitingForStage + "\ntimeInWaitingForRelease=" + timeInWaitingForRelease + "\n=====";
     }
 }
