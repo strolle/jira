@@ -1,8 +1,5 @@
 {
 "spreadsheetName": "metrojira",
-"jql": "(project = ME)",
-"storyPointField": "customfield_10105",
-"projectField": "project",
-"proj1String": "ME",
-"proj2String": "proj"
+"jql": "(project = ME or project = ED)",
+"projects": ["ME", "ED"]
 }

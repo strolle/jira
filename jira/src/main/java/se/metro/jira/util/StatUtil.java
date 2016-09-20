@@ -12,100 +12,110 @@ import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 
+import se.metro.jira.UpdateJiraStats;
+import se.metro.jira.communication.domain.ProjectStat;
 import se.metro.jira.communication.domain.Ticket;
 
 public class StatUtil {
-    public enum StatPeriod{WEEK, MONTH};
-    
+    public enum StatPeriod {
+        WEEK, MONTH
+    };
+
     /**
-     * This one breaks all tickets into different rovs depending on 
+     * This one breaks all tickets into different periods depending on resolved date
+     * 
      * @param tickets
      * @param period
      * @return
      */
-    public static List<List<String>> buildStoryPointResolvedPerPeriod(List<Ticket> tickets, StatPeriod period) {
-        Map<String, Double> storyPointMap = new HashMap<>();
+    public static List<List<String>> buildStatResolvedPerPeriod(List<Ticket> tickets, StatPeriod period) {
         Map<String, Integer> storysMap = new HashMap<>();
-        Map<String, Double> proj1StoryPointMap = new HashMap<>();
-        Map<String, Integer> proj1StorysMap = new HashMap<>();
-        Map<String, Double> proj1DevTimeMap = new HashMap<>();
-        Map<String, Double> proj2StoryPointMap = new HashMap<>();
-        Map<String, Integer> proj2StorysMap = new HashMap<>();
-        Map<String, Double> proj2DevTimeMap = new HashMap<>();
+        Map<String, Integer> devRejectedMap = new HashMap<>();
+        Map<String, Integer> poRejectedMap = new HashMap<>();
+        Map<String, Integer> reopenedMap = new HashMap<>();
+        Map<String, ProjectStat> projectStats = new HashMap<>();
 
-        //Add current period first
+        // Add current period first
         String currentPeriodDate = getPeriodString(period, new DateTime());
-        storyPointMap.put(currentPeriodDate, 0.);
-         
+        storysMap.put(currentPeriodDate, 0);
+
         for (Ticket ticket : tickets) {
             if (ticket.getResolvedDate() != null) {
                 String periodDate = getPeriodString(period, ticket.getResolvedDate());
-                Double sp = storyPointMap.get(periodDate);
-                sp = sp != null ? sp : 0.;
-                sp += ticket.getStorypoint();
-                storyPointMap.put(periodDate, sp);
 
                 Integer count = storysMap.get(periodDate);
                 count = count != null ? count : 0;
                 count++;
                 storysMap.put(periodDate, count);
 
-                if (ticket.isProj2()) {
-                    Double proj2Sp = proj2StoryPointMap.get(periodDate);
-                    proj2Sp = proj2Sp != null ? proj2Sp : 0.;
-                    proj2Sp += ticket.getStorypoint();
-                    proj2StoryPointMap.put(periodDate, proj2Sp);
-
-                    Double proj2Time = proj2DevTimeMap.get(periodDate);
-                    proj2Time = proj2Time != null ? proj2Time : 0.;
-                    proj2Time += ticket.getTimeInProgress();
-                    proj2DevTimeMap.put(periodDate, proj2Time);
-
-                    Integer proj2Count = proj2StorysMap.get(periodDate);
-                    proj2Count = proj2Count != null ? proj2Count : 0;
-                    proj2Count++;
-                    proj2StorysMap.put(periodDate, proj2Count);
+                if(ticket.isRejectedDevTest()){
+                    Integer rejectCount = devRejectedMap.get(periodDate);
+                    rejectCount = rejectCount != null ? rejectCount : 0;
+                    rejectCount++;
+                    devRejectedMap.put(periodDate, rejectCount);                    
                 }
-                if (ticket.isProj1()) {
-                    Double proj1Sp = proj1StoryPointMap.get(periodDate);
-                    proj1Sp = proj1Sp != null ? proj1Sp : 0.;
-                    proj1Sp += ticket.getStorypoint();
-                    proj1StoryPointMap.put(periodDate, proj1Sp);
-
-                    Double proj1Time = proj1DevTimeMap.get(periodDate);
-                    proj1Time = proj1Time != null ? proj1Time : 0.;
-                    proj1Time += ticket.getTimeInProgress();
-                    proj1DevTimeMap.put(periodDate, proj1Time);
-
-                    Integer proj1Count = proj1StorysMap.get(periodDate);
-                    proj1Count = proj1Count != null ? proj1Count : 0;
-                    proj1Count++;
-                    proj1StorysMap.put(periodDate, proj1Count);
+                if(ticket.isRejectedPoTest()){
+                    Integer rejectCount = poRejectedMap.get(periodDate);
+                    rejectCount = rejectCount != null ? rejectCount : 0;
+                    rejectCount++;
+                    poRejectedMap.put(periodDate, rejectCount);                    
                 }
+                if(ticket.isOpenAfterResolved()){
+                    Integer rejectCount = reopenedMap.get(periodDate);
+                    rejectCount = rejectCount != null ? rejectCount : 0;
+                    rejectCount++;
+                    reopenedMap.put(periodDate, rejectCount);                    
+                }
+                
+                
+                String project = ticket.getProject();
+                if (!projectStats.containsKey(project)) {
+                    projectStats.put(ticket.getProject(), new ProjectStat());
+                }
+                ProjectStat stat = projectStats.get(ticket.getProject());
+                Double time = stat.devTimeMap.get(periodDate);
+                time = time != null ? time : 0.;
+                time += ticket.getTimeInProgress();
+                stat.devTimeMap.put(periodDate, time);
+
+                Integer stories = stat.storyMap.get(periodDate);
+                stories = stories != null ? stories : 0;
+                stories++;
+                stat.storyMap.put(periodDate, stories);
+
+                projectStats.put(ticket.getProject(), stat);
             }
         }
         List<List<String>> result = new ArrayList<>();
 
-        List<String> keys = new ArrayList<>(storyPointMap.keySet());
+        List<String> keys = new ArrayList<>(storysMap.keySet());
         Collections.sort(keys);
         Collections.reverse(keys);
         for (String dateString : keys) {
             List<String> row = new ArrayList<>();
             row.add(dateString);
-            row.add("" + storyPointMap.get(dateString));
             row.add("" + (storysMap.get(dateString) != null ? storysMap.get(dateString) : 0));
-            row.add("" + (proj2StoryPointMap.get(dateString) != null ? proj2StoryPointMap.get(dateString) : 0.));
-            row.add("" + (proj2StorysMap.get(dateString) != null ? proj2StorysMap.get(dateString) : 0.));
-            row.add("" + (proj1StoryPointMap.get(dateString) != null ? proj1StoryPointMap.get(dateString) : 0.));
-            row.add("" + (proj1StorysMap.get(dateString) != null ? proj1StorysMap.get(dateString) : 0.));
-
-            row.add("" + (proj2DevTimeMap.get(dateString) != null ? proj2DevTimeMap.get(dateString) : 0.));
-            row.add("" + (proj1DevTimeMap.get(dateString) != null ? proj1DevTimeMap.get(dateString) : 0.));
+            for (String project : UpdateJiraStats.config.projects) {
+                ProjectStat stat = projectStats.get(project);
+                if (stat == null) {
+                    row.add("0");
+                    row.add("0");
+                } else {
+                    row.add("" + (stat.storyMap.get(dateString) != null ? stat.storyMap.get(dateString) : 0.));
+                    row.add("" + (stat.devTimeMap.get(dateString) != null ? stat.devTimeMap.get(dateString) : 0.));
+                }
+            }
+            
+            row.add("" + (devRejectedMap.get(dateString) != null ? devRejectedMap.get(dateString) : 0));
+            row.add("" + (poRejectedMap.get(dateString) != null ? poRejectedMap.get(dateString) : 0));
+            row.add("" + (reopenedMap.get(dateString) != null ? reopenedMap.get(dateString) : 0));
+            
             result.add(row);
         }
 
         return result;
     }
+
     private static String getPeriodString(StatPeriod period, DateTime dateTime) {
         String periodDate = null;
         if (period.equals(StatPeriod.WEEK)) {
@@ -123,8 +133,9 @@ public class StatUtil {
     // [5] Time in dev-test
     // [6] Time in PO-test
     // [7] Time after resolved
-    // [8] Time in waiting for stage
-    // [9] Time in waiting for release
+    // [8] Time in waiting for merge
+    // [9] Time in waiting for stage
+    // [10] Time in waiting for release
 
     public static List<List<String>> buildTimeInStatusPerMonth(List<Ticket> tickets) {
         Map<String, List<List<Double>>> timeSpentInStatusPerPeriod = new HashMap<>();
@@ -136,22 +147,32 @@ public class StatUtil {
                 if (timeSpentInStatus == null) {
                     timeSpentInStatus = new ArrayList<>();
                     timeSpentInStatusPerPeriod.put(periodDate, timeSpentInStatus);
-                    for(int i = 0; i < 10; i++){
+                    for (int i = 0; i < 11; i++) {
                         timeSpentInStatus.add(new ArrayList<Double>());
                     }
                 }
-                
-                if(ticket.getReleasedDate() != null)
+
+                if (ticket.getReleasedDate() != null)
                     timeSpentInStatus.get(0).add(TimeUtil.getWorkdaysBetween(ticket.getAnalysisStartDate(), ticket.getReleasedDate()));
                 timeSpentInStatus.get(1).add(TimeUtil.getWorkdaysBetween(ticket.getAnalysisStartDate(), ticket.getResolvedDate()));
-                timeSpentInStatus.get(2).add(ticket.getTimeInAnalysis() + ticket.getTimeInWaitingForDev());
+                timeSpentInStatus.get(2).add(ticket.getTimeInAnalysis());
                 timeSpentInStatus.get(3).add(ticket.getTimeInProgress());
                 timeSpentInStatus.get(4).add(ticket.getTimeInDevTest() + ticket.getTimeInAcceptTest());
                 timeSpentInStatus.get(5).add(ticket.getTimeInDevTest());
                 timeSpentInStatus.get(6).add(ticket.getTimeInAcceptTest());
-                timeSpentInStatus.get(7).add(ticket.getTimeInWaitingForStage() + ticket.getTimeInWaitingForRelease());
-                timeSpentInStatus.get(8).add(ticket.getTimeInWaitingForStage());
-                timeSpentInStatus.get(9).add(ticket.getTimeInWaitingForRelease());
+                timeSpentInStatus.get(7).add(ticket.getTimeInWaitingForMerge() + ticket.getTimeInWaitingForStage() + ticket.getTimeInWaitingForRelease());
+                timeSpentInStatus.get(8).add(ticket.getTimeInWaitingForMerge());
+                timeSpentInStatus.get(9).add(ticket.getTimeInWaitingForStage());
+                timeSpentInStatus.get(10).add(ticket.getTimeInWaitingForRelease());
+
+                if (ticket.getReleasedDate() != null) {
+                    double total = ticket.getTimeInAnalysis() + ticket.getTimeInProgress() + ticket.getTimeInDevTest() + ticket.getTimeInAcceptTest()
+                            + ticket.getTimeInWaitingForMerge() + ticket.getTimeInWaitingForStage() + ticket.getTimeInWaitingForRelease();
+                    double startEnd = TimeUtil.getWorkdaysBetween(ticket.getAnalysisStartDate(), ticket.getReleasedDate());
+                    double diff = Math.round(100. * (total - startEnd) / total);
+                    if (diff > 5. || diff < -5.)
+                        System.out.println(ticket.getId() + " - " + startEnd + " - " + total + " - " + diff);
+                }
             }
         }
         Median median = new Median();
@@ -164,9 +185,9 @@ public class StatUtil {
         for (String dateString : keys) {
             List<String> resultRow = new ArrayList<>();
             resultRow.add(dateString);
-            
+
             List<List<Double>> statLists = timeSpentInStatusPerPeriod.get(dateString);
-            for(List<Double> statList : statLists ){
+            for (List<Double> statList : statLists) {
                 resultRow.add("" + median.evaluate(ArrayUtils.toPrimitive(statList.toArray(new Double[0]))));
                 resultRow.add("" + mean.evaluate(ArrayUtils.toPrimitive(statList.toArray(new Double[0]))));
             }

@@ -1,8 +1,5 @@
 {
 "spreadsheetName": "jira",
-"jql": "project = MT",
-"storyPointField": "customfield_10105",
-"projectField": "customfield_10201",
-"proj1String": "AllaStudier",
-"proj2String": "MetroJobb"
+"jql": "(project = MT or project = ME or project = ED)",
+"projects": ["MT", "ME", "ED"]
 }

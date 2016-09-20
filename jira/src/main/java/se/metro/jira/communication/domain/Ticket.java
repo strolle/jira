@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.joda.time.DateTime;
 
-import se.metro.jira.UpdateJiraStats;
-
 /**
  * Holds info of a specific ticket.
  * 
@@ -17,31 +15,28 @@ public class Ticket {
     int sheetRow = -1;
 
     String id;
-    double storypoint;
-    boolean isProj1;
-    boolean isProj2;
+    String project;
     DateTime analysisStartDate;
     DateTime resolvedDate;
     DateTime closedDate;
     DateTime releasedDate;
     double timeInAnalysis;
-    double timeInWaitingForDev;
     double timeInProgress;
     double timeInDevTest;
     double timeInAcceptTest;
+    double timeInWaitingForMerge;
     double timeInWaitingForStage;
     double timeInWaitingForRelease;
+    boolean rejectedDevTest;
+    boolean rejectedPoTest;
+    boolean openAfterResolved;
     boolean ignoreRow;
 
     public void setValue(String tag, String value) {
         if (tag.equals("id")) {
             id = value;
-        } else if (tag.equals("sp")) {
-            storypoint = getDouble(value);
-        } else if (tag.equalsIgnoreCase(UpdateJiraStats.config.proj1String)) {
-            isProj1 = getBoolean(value);
-        } else if (tag.equalsIgnoreCase(UpdateJiraStats.config.proj2String)) {
-            isProj2 = getBoolean(value);
+        } else if (tag.equalsIgnoreCase("project")) {
+            project = value;
         } else if (tag.equals("startdate")) {
             analysisStartDate = getDate(value);
         } else if (tag.equals("resolveddate")) {
@@ -52,18 +47,24 @@ public class Ticket {
             releasedDate = getDate(value);
         } else if (tag.equals("timeinanalysis")) {
             timeInAnalysis = getDouble(value);
-        } else if (tag.equals("timewaitingfordev")) {
-            timeInWaitingForDev = getDouble(value);
         } else if (tag.equals("timeinprogress")) {
             timeInProgress = getDouble(value);
         } else if (tag.equals("timeindevtest")) {
             timeInDevTest = getDouble(value);
         } else if (tag.equals("timeinaccepttest")) {
             timeInAcceptTest = getDouble(value);
+        } else if (tag.equals("timeinmerge") || tag.equals("timeinrest")) {
+            timeInWaitingForMerge = getDouble(value);
         } else if (tag.equals("timeinwaitingforstage")) {
             timeInWaitingForStage = getDouble(value);
         } else if (tag.equals("timeinwaitingforrelease")) {
             timeInWaitingForRelease = getDouble(value);
+        } else if (tag.equalsIgnoreCase("rejecteddevtest")) {
+            rejectedDevTest = getBoolean(value);
+        } else if (tag.equalsIgnoreCase("rejectedpotest")) {
+            rejectedPoTest = getBoolean(value);
+        } else if (tag.equalsIgnoreCase("openafterresolved")) {
+            openAfterResolved = getBoolean(value);
         } else if (tag.equals("ignorerow")) {
             ignoreRow = (value != null && value.length() > 0);
         } else {
@@ -72,11 +73,11 @@ public class Ticket {
     }
 
     private double getDouble(String value) {
-        if (value != null){
-            try{
+        if (value != null) {
+            try {
                 value = value.replace(',', '.');
                 return Double.parseDouble(value);
-            } catch (Exception e){
+            } catch (Exception e) {
                 ;
             }
         }
@@ -91,6 +92,28 @@ public class Ticket {
 
     private boolean getBoolean(String value) {
         return Boolean.parseBoolean(value);
+    }
+
+    public List<String> getValues() {
+        List<String> list = new ArrayList<String>();
+        list.add(id.toString());
+        list.add("" + project);
+        list.add("" + analysisStartDate);
+        list.add("" + resolvedDate);
+        list.add("" + closedDate);
+        list.add("" + releasedDate);
+        list.add("" + timeInAnalysis);
+        list.add("" + timeInProgress);
+        list.add("" + timeInDevTest);
+        list.add("" + timeInAcceptTest);
+        list.add("" + timeInWaitingForMerge);
+        list.add("" + timeInWaitingForStage);
+        list.add("" + timeInWaitingForRelease);
+        list.add("" + rejectedDevTest);
+        list.add("" + rejectedPoTest);
+        list.add("" + openAfterResolved);
+
+        return list;
     }
 
     public int getSheetRow() {
@@ -109,28 +132,12 @@ public class Ticket {
         this.id = id;
     }
 
-    public double getStorypoint() {
-        return storypoint;
+    public String getProject() {
+        return project;
     }
 
-    public void setStorypoint(double storypoint) {
-        this.storypoint = storypoint;
-    }
-
-    public boolean isProj1() {
-        return isProj1;
-    }
-
-    public void setProj1(boolean isProj1) {
-        this.isProj1 = isProj1;
-    }
-
-    public boolean isProj2() {
-        return isProj2;
-    }
-
-    public void setProj2(boolean isProj2) {
-        this.isProj2 = isProj2;
+    public void setProject(String project) {
+        this.project = project;
     }
 
     public DateTime getAnalysisStartDate() {
@@ -173,14 +180,6 @@ public class Ticket {
         this.timeInAnalysis = timeInAnalysis;
     }
 
-    public double getTimeInWaitingForDev() {
-        return timeInWaitingForDev;
-    }
-
-    public void setTimeInWaitingForDev(double timeInWaitingForDev) {
-        this.timeInWaitingForDev = timeInWaitingForDev;
-    }
-
     public double getTimeInProgress() {
         return timeInProgress;
     }
@@ -205,6 +204,14 @@ public class Ticket {
         this.timeInAcceptTest = timeInAcceptTest;
     }
 
+    public double getTimeInWaitingForMerge() {
+        return timeInWaitingForMerge;
+    }
+
+    public void setTimeInWaitingForMerge(double timeInWaitingForMerge) {
+        this.timeInWaitingForMerge = timeInWaitingForMerge;
+    }
+
     public double getTimeInWaitingForStage() {
         return timeInWaitingForStage;
     }
@@ -221,6 +228,30 @@ public class Ticket {
         this.timeInWaitingForRelease = timeInWaitingForRelease;
     }
 
+    public boolean isRejectedDevTest() {
+        return rejectedDevTest;
+    }
+
+    public void setRejectedDevTest(boolean rejectedDevTest) {
+        this.rejectedDevTest = rejectedDevTest;
+    }
+
+    public boolean isRejectedPoTest() {
+        return rejectedPoTest;
+    }
+
+    public void setRejectedPoTest(boolean rejectedPoTest) {
+        this.rejectedPoTest = rejectedPoTest;
+    }
+
+    public boolean isOpenAfterResolved() {
+        return openAfterResolved;
+    }
+
+    public void setOpenAfterResolved(boolean openAfterResolved) {
+        this.openAfterResolved = openAfterResolved;
+    }
+
     public boolean isIgnoreRow() {
         return ignoreRow;
     }
@@ -229,32 +260,13 @@ public class Ticket {
         this.ignoreRow = ignoreRow;
     }
 
-    public List<String> getValues() {
-        List<String> list = new ArrayList<String>();
-        list.add(id.toString());
-        list.add("" + storypoint);
-        list.add("" + isProj1);
-        list.add("" + isProj2);
-        list.add("" + analysisStartDate);
-        list.add("" + resolvedDate);
-        list.add("" + closedDate);
-        list.add("" + releasedDate);
-        list.add("" + timeInAnalysis);
-        list.add("" + timeInWaitingForDev);
-        list.add("" + timeInProgress);
-        list.add("" + timeInDevTest);
-        list.add("" + timeInAcceptTest);
-        list.add("" + timeInWaitingForStage);
-        list.add("" + timeInWaitingForRelease);
-
-        return list;
-    }
-
     @Override
     public String toString() {
-        return "Ticket\n=====\nid=" + id + "\nstorypoint=" + storypoint + "\nisAs=" + isProj1 + "\nisMj=" + isProj2 + "\nanalysisStartDate=" + analysisStartDate
-                + "\nresolvedDate=" + resolvedDate + "\nclosedDate=" + closedDate + "\ntimeInAnalysis=" + timeInAnalysis + "\ntimeInWaitingForDev="
-                + timeInWaitingForDev + "\ntimeInProgress=" + timeInProgress + "\ntimeInDevTest=" + timeInDevTest + "\ntimeInAcceptTest=" + timeInAcceptTest
-                + "\ntimeInWaitingForStage=" + timeInWaitingForStage + "\ntimeInWaitingForRelease=" + timeInWaitingForRelease + "\n=====";
+        return "Ticket [sheetRow=" + sheetRow + ", id=" + id + ", project=" + project + ", analysisStartDate=" + analysisStartDate + ", resolvedDate="
+                + resolvedDate + ", closedDate=" + closedDate + ", releasedDate=" + releasedDate + ", timeInAnalysis=" + timeInAnalysis + ", timeInProgress="
+                + timeInProgress + ", timeInDevTest=" + timeInDevTest + ", timeInAcceptTest=" + timeInAcceptTest + ", timeInWaitingForMerge="
+                + timeInWaitingForMerge + ", timeInWaitingForStage=" + timeInWaitingForStage + ", timeInWaitingForRelease=" + timeInWaitingForRelease
+                + ", rejectedDevTest=" + rejectedDevTest + ", rejectedPoTest=" + rejectedPoTest + ", openAfterResolved=" + openAfterResolved + ", ignoreRow="
+                + ignoreRow + "]";
     }
 }

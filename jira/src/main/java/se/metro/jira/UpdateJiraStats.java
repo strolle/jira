@@ -1,5 +1,6 @@
 package se.metro.jira;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,10 @@ public class UpdateJiraStats {
 
     public static void main(String[] args) throws Exception {
         try {
-            if (args.length != 3) {
+            boolean allCsv = false;
+            if (args.length == 4 && args[3].equals("ALL")) {
+                allCsv = true;
+            } else if (args.length != 3) {
                 System.out.println("Usage: [config] [username] [password]");
                 System.exit(0);
             }
@@ -35,6 +39,13 @@ public class UpdateJiraStats {
             String password = args[2];
             JiraApiUtil.initClient(username, password);
 
+            if(allCsv){
+                System.out.println("Read all tickets");
+                updateAllTickets();
+                System.out.println("... aaaand we're done");
+                System.exit(0);
+            }
+            
             System.out.println("Open spreadsheet");
             SpreadsheetUtil.initService();
             SpreadsheetEntry spreadsheet = SpreadsheetUtil.getSpreadsheet(config.spreadsheetName);
@@ -45,7 +56,7 @@ public class UpdateJiraStats {
             List<Ticket> ticketsInDocument = SpreadsheetUtil.parseTicketSheet(ticketsSheet);
             System.out.println("Start parsing document");
             updateEditedTickets(ticketsSheet, ticketsInDocument, false);
-            //updateAllTickets(ticketsSheet);
+            // updateAllTickets(ticketsSheet);
             System.out.println("Tickets updated");
 
             ticketsInDocument = SpreadsheetUtil.parseTicketSheet(ticketsSheet);
@@ -77,7 +88,8 @@ public class UpdateJiraStats {
     private static void removeIgnoredTickets(List<Ticket> ticketsInDocument) {
         for (int i = 0; i < ticketsInDocument.size(); i++) {
             if (ticketsInDocument.get(i).isIgnoreRow()) {
-                ticketsInDocument.remove(i);
+                Ticket t = ticketsInDocument.remove(i);
+                System.out.println("Ignore ticket: " + t.getId());
                 i--;
             }
         }
@@ -109,7 +121,7 @@ public class UpdateJiraStats {
      * @throws Exception
      */
     private static void updateWeekStat(List<WorksheetEntry> worksheets, List<Ticket> ticketsInDocument) throws Exception {
-        List<List<String>> weekStat = StatUtil.buildStoryPointResolvedPerPeriod(ticketsInDocument, StatPeriod.WEEK);
+        List<List<String>> weekStat = StatUtil.buildStatResolvedPerPeriod(ticketsInDocument, StatPeriod.WEEK);
         System.out.println("Stats built");
         WorksheetEntry weekSheet = worksheets.get(2);
         SpreadsheetUtil.printDataToSheet(weekSheet, weekStat);
@@ -125,7 +137,7 @@ public class UpdateJiraStats {
      * @throws Exception
      */
     private static void updateMonthStat(List<WorksheetEntry> worksheets, List<Ticket> ticketsInDocument) throws Exception {
-        List<List<String>> monthStat = StatUtil.buildStoryPointResolvedPerPeriod(ticketsInDocument, StatPeriod.MONTH);
+        List<List<String>> monthStat = StatUtil.buildStatResolvedPerPeriod(ticketsInDocument, StatPeriod.MONTH);
         System.out.println("Stats built");
         WorksheetEntry weekSheet = worksheets.get(3);
         SpreadsheetUtil.printDataToSheet(weekSheet, monthStat);
@@ -165,35 +177,45 @@ public class UpdateJiraStats {
     }
 
     /**
-     * Not used in the main program. Used as run once the first time the board is imported (or when a bug is corrected). This may take hours. 
+     * Not used in the main program. Used as run once the first time the board is imported (or when a bug is corrected).
+     * This may take hours.
      * 
      * @param ticketsSheet
      * @throws Exception
      */
-    @SuppressWarnings("unused")
-    private static void updateAllTickets(WorksheetEntry ticketsSheet) throws Exception {
-        CellFeed cellFeed = SpreadsheetUtil.getCellFeed(ticketsSheet);
-
+    private static void updateAllTickets() throws Exception {
         Iterable<Issue> issueItr = JiraApiUtil.getTicketList("-104w", 0);
-        int row = 2;
         int loopCnt = 0;
         int count = 0;
+
+        List<Ticket> tickets = new ArrayList<>();
         while (true) {
-            count=0;
+            count = 0;
             for (Issue issue : issueItr) {
                 Ticket ticket = JiraApiUtil.getIssue(issue.getKey());
-                SpreadsheetUtil.setRow(cellFeed, row++, ticket.getValues());
+                tickets.add(ticket);
                 count++;
+                System.out.println(loopCnt + "-" + count + " - " + ticket.getValues());
             }
-            if(count > 0){
+            if (count > 0) {
                 loopCnt++;
-                issueItr = JiraApiUtil.getTicketList("-104w", loopCnt*500);
-            }
-            else{
+                issueItr = JiraApiUtil.getTicketList("-104w", loopCnt * 500);
+            } else {
                 break;
             }
         }
 
+        System.out.println("CSV");
+
+        for (Ticket ticket : tickets) {
+            List<String> values = ticket.getValues();
+            for (int i = 0; i < values.size(); i++) {
+                if (i != 0)
+                    System.out.print(",");
+                System.out.print(values.get(i));
+            }
+            System.out.println();
+        }
     }
 
 }

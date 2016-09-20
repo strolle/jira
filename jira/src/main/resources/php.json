@@ -1,8 +1,5 @@
 {
 "spreadsheetName": "phpjira",
 "jql": "(project = STUD or project = 'MODE')",
-"storyPointField": "customfield_10105",
-"projectField": "project",
-"proj1String": "MODE",
-"proj2String": "STUD"
+"projects": ["MODE", "STUD"]
 }
