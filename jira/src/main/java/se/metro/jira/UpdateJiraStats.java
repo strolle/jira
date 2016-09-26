@@ -158,9 +158,10 @@ public class UpdateJiraStats {
         }
         int row = SpreadsheetUtil.getListFeed(ticketsSheet).getEntries().size() + 1;
 
-        Iterable<Issue> issueItr = JiraApiUtil.getTicketList("-2d", 0);
+        Iterable<Issue> issueItr = JiraApiUtil.getTicketList("-9d", 0);
         System.out.println("Ticket list fetched");
         for (Issue issue : issueItr) {
+            System.out.println("Ticket: " + issue.getKey());
             Ticket previousTicket = documentHash.get(issue.getKey().toUpperCase());
 
             if (previousTicket == null || !onlyNew) {
@@ -168,6 +169,7 @@ public class UpdateJiraStats {
                 Ticket ticket = JiraApiUtil.getIssue(issue.getKey());
                 if (previousTicket == null) {
                     row++;
+                    System.out.println("New - row " + row);
                     SpreadsheetUtil.setRow(cellFeed, row, ticket.getValues());
                 } else {
                     SpreadsheetUtil.setRow(cellFeed, previousTicket.getSheetRow(), ticket.getValues());

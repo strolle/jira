@@ -40,6 +40,7 @@ public class StatUtil {
         storysMap.put(currentPeriodDate, 0);
 
         for (Ticket ticket : tickets) {
+            
             if (ticket.getResolvedDate() != null) {
                 String periodDate = getPeriodString(period, ticket.getResolvedDate());
 
@@ -84,6 +85,18 @@ public class StatUtil {
                 stat.storyMap.put(periodDate, stories);
 
                 projectStats.put(ticket.getProject(), stat);
+            }else if (ticket.getAnalysisStartDate().isAfter(new DateTime().minusMonths(2))) {
+                System.out.println(ticket.getId() + " Not resolved - " + ticket.getTimeInProgress());
+                // add stats regarding dev time to current period if not yet resolved
+                String project = ticket.getProject();
+                if (!projectStats.containsKey(project)) {
+                    projectStats.put(ticket.getProject(), new ProjectStat());
+                }
+                ProjectStat stat = projectStats.get(ticket.getProject());
+                Double time = stat.devTimeMap.get(currentPeriodDate);
+                time = time != null ? time : 0.;
+                time += ticket.getTimeInProgress();
+                stat.devTimeMap.put(currentPeriodDate, time);
             }
         }
         List<List<String>> result = new ArrayList<>();
