@@ -1,7 +1,6 @@
 package se.metro.jira.communication.domain;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.joda.time.DateTime;
 
@@ -27,6 +26,10 @@ public class Ticket {
     double timeInWaitingForMerge;
     double timeInWaitingForStage;
     double timeInWaitingForRelease;
+
+    double timeInAnalysisAfterTest;
+    double timeForUntouchedInDevTest;
+
     boolean rejectedDevTest;
     boolean rejectedPoTest;
     boolean openAfterResolved;
@@ -65,6 +68,10 @@ public class Ticket {
             rejectedPoTest = getBoolean(value);
         } else if (tag.equalsIgnoreCase("openafterresolved")) {
             openAfterResolved = getBoolean(value);
+        } else if (tag.equalsIgnoreCase("timeInAnalysisAfterTest")) {
+            timeInAnalysisAfterTest = getDouble(value);
+        } else if (tag.equalsIgnoreCase("timeForUntouchedInDevTest")) {
+            timeForUntouchedInDevTest = getDouble(value);
         } else if (tag.equals("ignorerow")) {
             ignoreRow = (value != null && value.length() > 0);
         } else {
@@ -109,10 +116,13 @@ public class Ticket {
         list.add("" + timeInWaitingForMerge);
         list.add("" + timeInWaitingForStage);
         list.add("" + timeInWaitingForRelease);
+
+        list.add("" + timeInAnalysisAfterTest);
+        list.add("" + timeForUntouchedInDevTest);
+
         list.add("" + rejectedDevTest);
         list.add("" + rejectedPoTest);
         list.add("" + openAfterResolved);
-
         return list;
     }
 
@@ -260,13 +270,45 @@ public class Ticket {
         this.ignoreRow = ignoreRow;
     }
 
+    public double getTimeInAnalysisAfterTest() {
+        return timeInAnalysisAfterTest;
+    }
+
+    public void setTimeInAnalysisAfterTest(double timeInAnalysisAfterTest) {
+        this.timeInAnalysisAfterTest = timeInAnalysisAfterTest;
+    }
+
+    public double getTimeForUntouchedInDevTest() {
+        return timeForUntouchedInDevTest;
+    }
+
+    public void setTimeForUntouchedInDevTest(double timeForUntouchedInDevTest) {
+        this.timeForUntouchedInDevTest = timeForUntouchedInDevTest;
+    }
+
     @Override
     public String toString() {
-        return "Ticket [sheetRow=" + sheetRow + ", id=" + id + ", project=" + project + ", analysisStartDate=" + analysisStartDate + ", resolvedDate="
-                + resolvedDate + ", closedDate=" + closedDate + ", releasedDate=" + releasedDate + ", timeInAnalysis=" + timeInAnalysis + ", timeInProgress="
-                + timeInProgress + ", timeInDevTest=" + timeInDevTest + ", timeInAcceptTest=" + timeInAcceptTest + ", timeInWaitingForMerge="
-                + timeInWaitingForMerge + ", timeInWaitingForStage=" + timeInWaitingForStage + ", timeInWaitingForRelease=" + timeInWaitingForRelease
-                + ", rejectedDevTest=" + rejectedDevTest + ", rejectedPoTest=" + rejectedPoTest + ", openAfterResolved=" + openAfterResolved + ", ignoreRow="
-                + ignoreRow + "]";
+        return "Ticket{" +
+                "sheetRow=" + sheetRow +
+                ", id='" + id + '\'' +
+                ", project='" + project + '\'' +
+                ", analysisStartDate=" + analysisStartDate +
+                ", resolvedDate=" + resolvedDate +
+                ", closedDate=" + closedDate +
+                ", releasedDate=" + releasedDate +
+                ", timeInAnalysis=" + timeInAnalysis +
+                ", timeInProgress=" + timeInProgress +
+                ", timeInDevTest=" + timeInDevTest +
+                ", timeInAcceptTest=" + timeInAcceptTest +
+                ", timeInWaitingForMerge=" + timeInWaitingForMerge +
+                ", timeInWaitingForStage=" + timeInWaitingForStage +
+                ", timeInWaitingForRelease=" + timeInWaitingForRelease +
+                ", timeInAnalysisAfterTest=" + timeInAnalysisAfterTest +
+                ", timeForUntouchedInDevTest=" + timeForUntouchedInDevTest +
+                ", rejectedDevTest=" + rejectedDevTest +
+                ", rejectedPoTest=" + rejectedPoTest +
+                ", openAfterResolved=" + openAfterResolved +
+                ", ignoreRow=" + ignoreRow +
+                '}';
     }
 }

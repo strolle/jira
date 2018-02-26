@@ -160,7 +160,7 @@ public class StatUtil {
                 if (timeSpentInStatus == null) {
                     timeSpentInStatus = new ArrayList<>();
                     timeSpentInStatusPerPeriod.put(periodDate, timeSpentInStatus);
-                    for (int i = 0; i < 11; i++) {
+                    for (int i = 0; i < 13; i++) {
                         timeSpentInStatus.add(new ArrayList<Double>());
                     }
                 }
@@ -177,6 +177,9 @@ public class StatUtil {
                 timeSpentInStatus.get(8).add(ticket.getTimeInWaitingForMerge());
                 timeSpentInStatus.get(9).add(ticket.getTimeInWaitingForStage());
                 timeSpentInStatus.get(10).add(ticket.getTimeInWaitingForRelease());
+
+                timeSpentInStatus.get(11).add(ticket.getTimeForUntouchedInDevTest());
+                timeSpentInStatus.get(12).add(ticket.getTimeInAnalysisAfterTest());
 
                 if (ticket.getReleasedDate() != null) {
                     double total = ticket.getTimeInAnalysis() + ticket.getTimeInProgress() + ticket.getTimeInDevTest() + ticket.getTimeInAcceptTest()

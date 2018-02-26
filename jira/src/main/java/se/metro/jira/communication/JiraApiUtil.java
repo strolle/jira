@@ -1,10 +1,9 @@
 package se.metro.jira.communication;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
+import org.codehaus.jettison.json.*;
 import org.joda.time.DateTime;
 
 import com.atlassian.jira.rest.client.api.IssueRestClient.Expandos;
@@ -28,6 +27,8 @@ public class JiraApiUtil {
 
     private static JiraRestClient client = null;
 
+    public static Set<String> parentIssues = new HashSet<>();
+
     public static void initClient(String username, String password) throws Exception {
         JiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
         URI uri = new URI(JIRA_URL);
@@ -38,7 +39,7 @@ public class JiraApiUtil {
         Set<String> fieldSet = new HashSet<>(
                 Arrays.asList("status", "project", "created", "updated", "key", "summary", "issuetype"));
         Promise<SearchResult> result =
-                client.getSearchClient().searchJql(String.format(UpdateJiraStats.config.jql + MAIN_JQL, startPeriod), 500, offset, fieldSet);
+                client.getSearchClient().searchJql(String.format(UpdateJiraStats.config.jql + MAIN_JQL, startPeriod), 100, offset, fieldSet);
         return result.claim().getIssues();
     }
 
@@ -52,6 +53,13 @@ public class JiraApiUtil {
         ticket.setId(issue.getKey());
         ticket.setProject(issue.getProject().getKey());
 
+        if(issue.getField("parent") != null){
+            try {
+                parentIssues.add(((JSONObject)issue.getField("parent").getValue()).getString("key"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
         processTransactionHistory(issue, ticket);
         return ticket;
     }
@@ -59,8 +67,29 @@ public class JiraApiUtil {
     private static void processTransactionHistory(Issue issue, Ticket ticket) {
         DateTime lastTransistion = null;
         boolean openToReady = false;
+
+        //fix jira sorting issue
+        List<ChangelogGroup> groupList = new ArrayList<>();
         for (ChangelogGroup clg : issue.getChangelog()) {
+            groupList.add(clg);
+        }
+        if (groupList.size() > 1 && groupList.get(0).getCreated().isAfter(groupList.get(groupList.size() - 1).getCreated())) {
+            Collections.reverse(groupList);
+        }
+
+        String currentStatus = null;
+
+        for (ChangelogGroup clg : groupList) {
             for (ChangelogItem cli : clg.getItems()) {
+                if (cli.getField().equals("Flagged") && cli.getTo().toString().equals("[10000]")) {
+                    //track flagged
+                    if (currentStatus != null && currentStatus.equals("Dev-test")) {
+                        ticket.setTimeForUntouchedInDevTest(ticket.getTimeForUntouchedInDevTest() + TimeUtil.getWorkdaysBetween(lastTransistion, clg.getCreated()));
+                        currentStatus = "";
+                    }
+                    continue;
+                }
+
                 if (!(cli.getField().equals("Fix Version") || cli.getField().equals("status"))) {
                     continue;
                 }
@@ -70,6 +99,7 @@ public class JiraApiUtil {
                     time = TimeUtil.getWorkdaysBetween(lastTransistion, clg.getCreated());
                 }
 
+                currentStatus = cli.getToString();
                 if (cli.getField().equals("Fix Version")) {
                     ticket.setTimeInWaitingForRelease(ticket.getTimeInWaitingForRelease() + time);
                     ticket.setReleasedDate(clg.getCreated());
@@ -80,6 +110,9 @@ public class JiraApiUtil {
                     ticket.setAnalysisStartDate(clg.getCreated());
                 } else if (cli.getFromString() != null && cli.getFromString().equals("Analysis")) {
                     ticket.setTimeInAnalysis(ticket.getTimeInAnalysis() + time);
+                    if (ticket.isRejectedDevTest() || ticket.isRejectedPoTest()) {
+                        ticket.setTimeInAnalysisAfterTest(ticket.getTimeInAnalysisAfterTest() + time);
+                    }
                 } else if (cli.getFromString() != null && cli.getFromString().equals("In Progress")) {
                     ticket.setTimeInProgress(ticket.getTimeInProgress() + time);
                 } else if (cli.getFromString() != null && cli.getFromString().equals("Dev-test")) {
@@ -138,6 +171,5 @@ public class JiraApiUtil {
                 lastTransistion = clg.getCreated();
             }
         }
-
     }
 }

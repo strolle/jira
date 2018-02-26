@@ -69,7 +69,7 @@ public class UpdateJiraStats {
             System.out.println("Update month Stat");
             updateMonthStat(worksheets, ticketsInDocument);
 
-            System.out.println("Update month Stat");
+            System.out.println("Update status Stat");
             updateStatusStat(worksheets, ticketsInDocument);
         } catch (Exception e) {
             e.printStackTrace();
@@ -145,8 +145,7 @@ public class UpdateJiraStats {
 
     /**
      * Fetches tickets that has been changed during the last two days and updates the Tickets worksheet accordingly
-     * 
-     * @param worksheets
+     *
      * @param ticketsInDocument
      * @throws Exception
      */
@@ -176,17 +175,26 @@ public class UpdateJiraStats {
                 }
             }
         }
+
+        //set ignore
+        for(String issueId : JiraApiUtil.parentIssues){
+            Ticket previousTicket = documentHash.get(issueId.toUpperCase());
+            if(previousTicket != null && !previousTicket.isIgnoreRow()) {
+                previousTicket.setIgnoreRow(true);
+                SpreadsheetUtil.setRow(cellFeed, previousTicket.getSheetRow(), previousTicket.getValues());
+            }
+        }
+
     }
 
     /**
      * Not used in the main program. Used as run once the first time the board is imported (or when a bug is corrected).
      * This may take hours.
-     * 
-     * @param ticketsSheet
+     *
      * @throws Exception
      */
     private static void updateAllTickets() throws Exception {
-        Iterable<Issue> issueItr = JiraApiUtil.getTicketList("-104w", 0);
+        Iterable<Issue> issueItr = JiraApiUtil.getTicketList("-108w", 0);
         int loopCnt = 0;
         int count = 0;
 
@@ -201,7 +209,7 @@ public class UpdateJiraStats {
             }
             if (count > 0) {
                 loopCnt++;
-                issueItr = JiraApiUtil.getTicketList("-104w", loopCnt * 500);
+                issueItr = JiraApiUtil.getTicketList("-108w", loopCnt * 100);
             } else {
                 break;
             }
@@ -210,6 +218,10 @@ public class UpdateJiraStats {
         System.out.println("CSV");
 
         for (Ticket ticket : tickets) {
+            if(JiraApiUtil.parentIssues.contains(ticket.getId())){
+                ticket.setIgnoreRow(true);
+            }
+
             List<String> values = ticket.getValues();
             for (int i = 0; i < values.size(); i++) {
                 if (i != 0)

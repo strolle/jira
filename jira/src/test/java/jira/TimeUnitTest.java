@@ -1,6 +1,7 @@
 package jira;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
 import org.joda.time.DateTime;
 import org.junit.Assert;
@@ -60,4 +61,14 @@ public class TimeUnitTest {
         Assert.assertThat(time, is(4.25));
     }
 
+    @Test
+    public void testParse(){
+        DateTime start = DateTime.parse("2017-11-06T13:49:45.990+01:00");
+        DateTime end = DateTime.parse("2017-11-07T07:55:50.529+01:00");
+        System.out.println(start);
+        System.out.println(end);
+        double time = TimeUtil.getWorkdaysBetween(start, end);
+        System.out.println(time);
+        Assert.assertThat(time, is(0.375));
+    }
 }
