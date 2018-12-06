@@ -23,11 +23,11 @@ import se.metro.jira.util.TimeUtil;
 public class JiraApiUtil {
     private static final String JIRA_URL = "https://metroonline.atlassian.net";
     private static final String MAIN_JQL =
-            " AND status changed during (%s, now()) AND status changed to ('In Progress') AND NOT (status changed from (Open) to (Closed))";
+            " AND status changed during (%s, now()) AND status changed to ('In Progress') AND NOT (status changed from ('Backlog') to ('Done'))";
 
     private static JiraRestClient client = null;
 
-    public static Set<String> parentIssues = new HashSet<>();
+    public static final Set<String> parentIssues = new HashSet<>();
 
     public static void initClient(String username, String password) throws Exception {
         JiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
@@ -39,7 +39,7 @@ public class JiraApiUtil {
         Set<String> fieldSet = new HashSet<>(
                 Arrays.asList("status", "project", "created", "updated", "key", "summary", "issuetype"));
         Promise<SearchResult> result =
-                client.getSearchClient().searchJql(String.format(UpdateJiraStats.config.jql + MAIN_JQL, startPeriod), 100, offset, fieldSet);
+                client.getSearchClient().searchJql(String.format(UpdateJiraStats.config.getJql() + MAIN_JQL, startPeriod), 100, offset, fieldSet);
         return result.claim().getIssues();
     }
 
@@ -83,7 +83,7 @@ public class JiraApiUtil {
             for (ChangelogItem cli : clg.getItems()) {
                 if (cli.getField().equals("Flagged") && cli.getTo().toString().equals("[10000]")) {
                     //track flagged
-                    if (currentStatus != null && currentStatus.equals("Dev-test")) {
+                    if (currentStatus != null && currentStatus.equals("Dev Review")) {
                         ticket.setTimeForUntouchedInDevTest(ticket.getTimeForUntouchedInDevTest() + TimeUtil.getWorkdaysBetween(lastTransistion, clg.getCreated()));
                         currentStatus = "";
                     }
@@ -103,69 +103,66 @@ public class JiraApiUtil {
                 if (cli.getField().equals("Fix Version")) {
                     ticket.setTimeInWaitingForRelease(ticket.getTimeInWaitingForRelease() + time);
                     ticket.setReleasedDate(clg.getCreated());
-                } else if (cli.getFromString() != null && cli.getFromString().equals("Open")) {
+                } else if (cli.getFromString() != null && cli.getFromString().equals("Backlog")) {
                     if (cli.getToString() != null && cli.getToString().equals("Ready for Development")) {
                         openToReady = true;
                     }
-                    ticket.setAnalysisStartDate(clg.getCreated());
-                } else if (cli.getFromString() != null && cli.getFromString().equals("Analysis")) {
-                    ticket.setTimeInAnalysis(ticket.getTimeInAnalysis() + time);
-                    if (ticket.isRejectedDevTest() || ticket.isRejectedPoTest()) {
-                        ticket.setTimeInAnalysisAfterTest(ticket.getTimeInAnalysisAfterTest() + time);
-                    }
+                    ticket.setProgressStartDate(clg.getCreated());
                 } else if (cli.getFromString() != null && cli.getFromString().equals("In Progress")) {
                     ticket.setTimeInProgress(ticket.getTimeInProgress() + time);
-                } else if (cli.getFromString() != null && cli.getFromString().equals("Dev-test")) {
+                } else if (cli.getFromString() != null && cli.getFromString().equals("Dev Review")) {
                     ticket.setTimeInDevTest(ticket.getTimeInDevTest() + time);
                     String to = cli.getToString();
-                    if (to != null && (to.equals("In Progress") || to.equals("Analysis") || to.equals("Open") || cli.getToString().equals("Ready for Development"))) {
+                    if (to != null && (to.equals("In Progress") || to.equals("Backlog") || cli.getToString().equals("Ready for Development"))) {
                         ticket.setRejectedDevTest(true);
                     }
                 } else if (cli.getFromString() != null && cli.getFromString().equals("DOD")) {
                     String to = cli.getToString();
-                    if (to != null && (to.equals("In Progress") || to.equals("Analysis") || to.equals("Open") || cli.getToString().equals("Ready for Development"))) {
+                    if (to != null && (to.equals("In Progress") || to.equals("Backlog") || cli.getToString().equals("Ready for Development"))) {
                         ticket.setRejectedPoTest(true);
                     }
                     ticket.setTimeInAcceptTest(ticket.getTimeInAcceptTest() + time);
-                } else if (cli.getFromString() != null && (cli.getFromString().equals("Merge") || cli.getFromString().equals("Resting"))) {
-                    ticket.setTimeInWaitingForMerge(ticket.getTimeInWaitingForMerge() + time);
-                } else if (cli.getFromString() != null && cli.getFromString().equals("Resolved")) {
-                    ticket.setTimeInWaitingForStage(ticket.getTimeInWaitingForStage() + time);
+                } else if (cli.getFromString() != null && (cli.getFromString().equals("Build-RC"))) {
+                    ticket.setTimeInRC(ticket.getTimeInRC() + time);
                     String to = cli.getToString();
-                    if (to != null && to.equals("Open")) {
+                    if (to != null && to.equals("Backlog")) {
                         System.out.println("!!" + ticket.getId() + " RESOLVED TO OPEN: " + cli.getFromString());
                         ticket.setOpenAfterResolved(true);
                     }
-                } else if (cli.getFromString() != null && cli.getFromString().equals("Closed")) {
+                } else if (cli.getFromString() != null && cli.getFromString().equals("Done")) {
                     String to = cli.getToString();
-                    if (to != null && to.equals("Open")) {
+                    if (to != null && to.equals("Backlog")) {
                         System.out.println("!!" + ticket.getId() + " CLOSED TO OPEN: " + cli.getFromString());
                         ticket.setOpenAfterResolved(true);
                     }
                 } else if (cli.getFromString() != null && cli.getFromString().equals("Ready for Development")) {
                     if (openToReady) {
-                        ticket.setAnalysisStartDate(clg.getCreated());
+                        ticket.setProgressStartDate(clg.getCreated());
                         openToReady = false;
                     }
                 } else {
                     System.out.println("!!" + ticket.getId() + " ERROR: DIDN'T RESOLVE MAP: " + cli.getFromString());
                 }
 
-                if (cli.getToString() != null && cli.getToString().equals("Resolved")) {
+                if (cli.getToString() != null && cli.getToString().equals("Build-RC")) {
                     if (ticket.getResolvedDate() != null && !ticket.isOpenAfterResolved())
-                        System.out.println("!! " + ticket.getId() + " Resolved date already set to " + ticket.getResolvedDate() + " -  Skipping");
+                        System.out.println("!! " + ticket.getId() + " Build-RC date already set to " + ticket.getResolvedDate() + " -  Skipping");
                     else {
                         if (ticket.getResolvedDate() != null)
                             System.out.println("!! " + ticket.getId() + " Resetting resolved date from " + ticket.getResolvedDate());
                         ticket.setResolvedDate(clg.getCreated());
                     }
-                } else if (cli.getToString() != null && cli.getToString().equals("Closed")) {
+                } else if (cli.getToString() != null && cli.getToString().equals("Done")) {
                     if (ticket.getClosedDate() != null && !ticket.isOpenAfterResolved())
                         System.out.println("!! " + ticket.getId() + " Closed date already set to " + ticket.getClosedDate() + " -  Skipping");
                     else {
                         if (ticket.getClosedDate() != null)
                             System.out.println("!! " + ticket.getId() + " Resetting closed date from " + ticket.getClosedDate());
                         ticket.setClosedDate(clg.getCreated());
+                        //set resolved as well
+                        if (ticket.getResolvedDate() == null) {
+                            ticket.setResolvedDate(clg.getCreated());
+                        }
                     }
                 }
                 lastTransistion = clg.getCreated();

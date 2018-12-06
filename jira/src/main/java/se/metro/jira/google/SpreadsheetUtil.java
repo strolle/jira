@@ -25,7 +25,7 @@ import com.google.gdata.data.spreadsheet.WorksheetFeed;
 import se.metro.jira.communication.domain.Ticket;
 
 public class SpreadsheetUtil {
-    private static JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String SPREADSHEET_SERVICE_URL = "https://spreadsheets.google.com/feeds/spreadsheets/private/full";
     private static SpreadsheetService service = null;
 

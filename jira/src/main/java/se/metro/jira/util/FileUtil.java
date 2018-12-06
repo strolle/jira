@@ -3,17 +3,16 @@ package se.metro.jira.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 
 import se.metro.jira.Configuration;
 
 public final class FileUtil {
-    public static final String readResourceTextFile(final String path) throws IOException, UnsupportedEncodingException {
+    public static String readResourceTextFile(final String path) throws IOException {
         BufferedReader in = null;
         try {
-            in = new BufferedReader(new InputStreamReader(new Configuration().getClass().getResourceAsStream("/" + path), "UTF8"));
+            in = new BufferedReader(new InputStreamReader(Configuration.class.getResourceAsStream("/" + path), "UTF8"));
 
-            final StringBuffer resultText = new StringBuffer();
+            final StringBuilder resultText = new StringBuilder();
             String line;
 
             while ((line = in.readLine()) != null) {

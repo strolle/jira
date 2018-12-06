@@ -1,7 +1,6 @@
 package jira;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 
 import org.joda.time.DateTime;
 import org.junit.Assert;

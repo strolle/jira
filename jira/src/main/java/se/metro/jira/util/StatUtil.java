@@ -19,7 +19,7 @@ import se.metro.jira.communication.domain.Ticket;
 public class StatUtil {
     public enum StatPeriod {
         WEEK, MONTH
-    };
+    }
 
     /**
      * This one breaks all tickets into different periods depending on resolved date
@@ -85,7 +85,7 @@ public class StatUtil {
                 stat.storyMap.put(periodDate, stories);
 
                 projectStats.put(ticket.getProject(), stat);
-            }else if (ticket.getAnalysisStartDate().isAfter(new DateTime().minusMonths(2))) {
+            }else if (ticket.getProgressStartDate().isAfter(new DateTime().minusMonths(2))) {
                 System.out.println(ticket.getId() + " Not resolved - " + ticket.getTimeInProgress());
                 // add stats regarding dev time to current period if not yet resolved
                 String project = ticket.getProject();
@@ -108,7 +108,7 @@ public class StatUtil {
             List<String> row = new ArrayList<>();
             row.add(dateString);
             row.add("" + (storysMap.get(dateString) != null ? storysMap.get(dateString) : 0));
-            for (String project : UpdateJiraStats.config.projects) {
+            for (String project : UpdateJiraStats.config.getProjects()) {
                 ProjectStat stat = projectStats.get(project);
                 if (stat == null) {
                     row.add("0");
@@ -130,7 +130,7 @@ public class StatUtil {
     }
 
     private static String getPeriodString(StatPeriod period, DateTime dateTime) {
-        String periodDate = null;
+        String periodDate;
         if (period.equals(StatPeriod.WEEK)) {
             periodDate = dateTime.withDayOfWeek(DateTimeConstants.MONDAY).toString("yyyy-MM-dd");
         } else {
@@ -139,16 +139,16 @@ public class StatUtil {
         return periodDate;
     }
     // [0] Time to release
-    // [1] Time to resolved
-    // [2] Time before progress
-    // [3] Time in progress
-    // [4] Time in test
-    // [5] Time in dev-test
-    // [6] Time in PO-test
-    // [7] Time after resolved
-    // [8] Time in waiting for merge
-    // [9] Time in waiting for stage
-    // [10] Time in waiting for release
+    // [1] Time to accepted solution (test completed)
+    // [2] Time in progress
+    // [3] Time in test
+    // [4] Time in dev-test
+    // [5] Time in PO-test
+    // [6] Time after accepted
+    // [7] Time in RC
+    // [8] Time in waiting for release
+    // [9] Untuched dev test
+    // [10] Fix time
 
     public static List<List<String>> buildTimeInStatusPerMonth(List<Ticket> tickets) {
         Map<String, List<List<Double>>> timeSpentInStatusPerPeriod = new HashMap<>();
@@ -160,31 +160,29 @@ public class StatUtil {
                 if (timeSpentInStatus == null) {
                     timeSpentInStatus = new ArrayList<>();
                     timeSpentInStatusPerPeriod.put(periodDate, timeSpentInStatus);
-                    for (int i = 0; i < 13; i++) {
+                    for (int i = 0; i < 11; i++) {
                         timeSpentInStatus.add(new ArrayList<Double>());
                     }
                 }
 
                 if (ticket.getReleasedDate() != null)
-                    timeSpentInStatus.get(0).add(TimeUtil.getWorkdaysBetween(ticket.getAnalysisStartDate(), ticket.getReleasedDate()));
-                timeSpentInStatus.get(1).add(TimeUtil.getWorkdaysBetween(ticket.getAnalysisStartDate(), ticket.getResolvedDate()));
-                timeSpentInStatus.get(2).add(ticket.getTimeInAnalysis());
-                timeSpentInStatus.get(3).add(ticket.getTimeInProgress());
-                timeSpentInStatus.get(4).add(ticket.getTimeInDevTest() + ticket.getTimeInAcceptTest());
-                timeSpentInStatus.get(5).add(ticket.getTimeInDevTest());
-                timeSpentInStatus.get(6).add(ticket.getTimeInAcceptTest());
-                timeSpentInStatus.get(7).add(ticket.getTimeInWaitingForMerge() + ticket.getTimeInWaitingForStage() + ticket.getTimeInWaitingForRelease());
-                timeSpentInStatus.get(8).add(ticket.getTimeInWaitingForMerge());
-                timeSpentInStatus.get(9).add(ticket.getTimeInWaitingForStage());
-                timeSpentInStatus.get(10).add(ticket.getTimeInWaitingForRelease());
+                    timeSpentInStatus.get(0).add(TimeUtil.getWorkdaysBetween(ticket.getProgressStartDate(), ticket.getReleasedDate()));
+                timeSpentInStatus.get(1).add(TimeUtil.getWorkdaysBetween(ticket.getProgressStartDate(), ticket.getResolvedDate()));
+                timeSpentInStatus.get(2).add(ticket.getTimeInProgress());
+                timeSpentInStatus.get(3).add(ticket.getTimeInDevTest() + ticket.getTimeInAcceptTest());
+                timeSpentInStatus.get(4).add(ticket.getTimeInDevTest());
+                timeSpentInStatus.get(5).add(ticket.getTimeInAcceptTest());
+                timeSpentInStatus.get(6).add(ticket.getTimeInRC() + ticket.getTimeInWaitingForRelease());
+                timeSpentInStatus.get(7).add(ticket.getTimeInRC());
+                timeSpentInStatus.get(8).add(ticket.getTimeInWaitingForRelease());
 
-                timeSpentInStatus.get(11).add(ticket.getTimeForUntouchedInDevTest());
-                timeSpentInStatus.get(12).add(ticket.getTimeInAnalysisAfterTest());
+                timeSpentInStatus.get(9).add(ticket.getTimeForUntouchedInDevTest());
+                timeSpentInStatus.get(10).add(ticket.getTimeInProgressAfterTest());
 
                 if (ticket.getReleasedDate() != null) {
-                    double total = ticket.getTimeInAnalysis() + ticket.getTimeInProgress() + ticket.getTimeInDevTest() + ticket.getTimeInAcceptTest()
-                            + ticket.getTimeInWaitingForMerge() + ticket.getTimeInWaitingForStage() + ticket.getTimeInWaitingForRelease();
-                    double startEnd = TimeUtil.getWorkdaysBetween(ticket.getAnalysisStartDate(), ticket.getReleasedDate());
+                    double total = ticket.getTimeInProgress() + ticket.getTimeInDevTest() + ticket.getTimeInAcceptTest()
+                            + ticket.getTimeInRC() + ticket.getTimeInWaitingForRelease();
+                    double startEnd = TimeUtil.getWorkdaysBetween(ticket.getProgressStartDate(), ticket.getReleasedDate());
                     double diff = Math.round(100. * (total - startEnd) / total);
                     if (diff > 5. || diff < -5.)
                         System.out.println(ticket.getId() + " - " + startEnd + " - " + total + " - " + diff);

@@ -48,7 +48,7 @@ public class UpdateJiraStats {
             
             System.out.println("Open spreadsheet");
             SpreadsheetUtil.initService();
-            SpreadsheetEntry spreadsheet = SpreadsheetUtil.getSpreadsheet(config.spreadsheetName);
+            SpreadsheetEntry spreadsheet = SpreadsheetUtil.getSpreadsheet(config.getSpreadsheetName());
             List<WorksheetEntry> worksheets = SpreadsheetUtil.getWorksheetFeed(spreadsheet);
             WorksheetEntry ticketsSheet = worksheets.get(1);
 
@@ -193,14 +193,13 @@ public class UpdateJiraStats {
      *
      * @throws Exception
      */
-    private static void updateAllTickets() throws Exception {
+    private static void updateAllTickets() {
         Iterable<Issue> issueItr = JiraApiUtil.getTicketList("-108w", 0);
         int loopCnt = 0;
-        int count = 0;
 
         List<Ticket> tickets = new ArrayList<>();
         while (true) {
-            count = 0;
+            int count = 0;
             for (Issue issue : issueItr) {
                 Ticket ticket = JiraApiUtil.getIssue(issue.getKey());
                 tickets.add(ticket);

@@ -1,0 +1,5 @@
+{
+  "spreadsheetName": "springjira",
+  "jql": "(project = SP AND issuetype != Epic)",
+  "projects": ["SP"]
+}

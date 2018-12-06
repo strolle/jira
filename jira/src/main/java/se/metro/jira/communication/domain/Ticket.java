@@ -11,29 +11,27 @@ import org.joda.time.DateTime;
  *
  */
 public class Ticket {
-    int sheetRow = -1;
+    private int sheetRow = -1;
 
-    String id;
-    String project;
-    DateTime analysisStartDate;
-    DateTime resolvedDate;
-    DateTime closedDate;
-    DateTime releasedDate;
-    double timeInAnalysis;
-    double timeInProgress;
-    double timeInDevTest;
-    double timeInAcceptTest;
-    double timeInWaitingForMerge;
-    double timeInWaitingForStage;
-    double timeInWaitingForRelease;
+    private String id;
+    private String project;
+    private DateTime progressStartDate;
+    private DateTime resolvedDate;
+    private DateTime closedDate;
+    private DateTime releasedDate;
+    private double timeInProgress;
+    private double timeInDevTest;
+    private double timeInAcceptTest;
+    private double timeInRC;
+    private double timeInWaitingForRelease;
 
-    double timeInAnalysisAfterTest;
-    double timeForUntouchedInDevTest;
+    private double timeInProgressAfterTest;
+    private double timeForUntouchedInDevTest;
 
-    boolean rejectedDevTest;
-    boolean rejectedPoTest;
-    boolean openAfterResolved;
-    boolean ignoreRow;
+    private boolean rejectedDevTest;
+    private boolean rejectedPoTest;
+    private boolean openAfterResolved;
+    private boolean ignoreRow;
 
     public void setValue(String tag, String value) {
         if (tag.equals("id")) {
@@ -41,25 +39,21 @@ public class Ticket {
         } else if (tag.equalsIgnoreCase("project")) {
             project = value;
         } else if (tag.equals("startdate")) {
-            analysisStartDate = getDate(value);
+            progressStartDate = getDate(value);
         } else if (tag.equals("resolveddate")) {
             resolvedDate = getDate(value);
         } else if (tag.equals("closeddate")) {
             closedDate = getDate(value);
         } else if (tag.equals("releasedate")) {
             releasedDate = getDate(value);
-        } else if (tag.equals("timeinanalysis")) {
-            timeInAnalysis = getDouble(value);
         } else if (tag.equals("timeinprogress")) {
             timeInProgress = getDouble(value);
         } else if (tag.equals("timeindevtest")) {
             timeInDevTest = getDouble(value);
         } else if (tag.equals("timeinaccepttest")) {
             timeInAcceptTest = getDouble(value);
-        } else if (tag.equals("timeinmerge") || tag.equals("timeinrest")) {
-            timeInWaitingForMerge = getDouble(value);
-        } else if (tag.equals("timeinwaitingforstage")) {
-            timeInWaitingForStage = getDouble(value);
+        } else if (tag.equals("timeinrc")) {
+            timeInRC = getDouble(value);
         } else if (tag.equals("timeinwaitingforrelease")) {
             timeInWaitingForRelease = getDouble(value);
         } else if (tag.equalsIgnoreCase("rejecteddevtest")) {
@@ -68,8 +62,8 @@ public class Ticket {
             rejectedPoTest = getBoolean(value);
         } else if (tag.equalsIgnoreCase("openafterresolved")) {
             openAfterResolved = getBoolean(value);
-        } else if (tag.equalsIgnoreCase("timeInAnalysisAfterTest")) {
-            timeInAnalysisAfterTest = getDouble(value);
+        } else if (tag.equalsIgnoreCase("timeInProgressAfterTest")) {
+            timeInProgressAfterTest = getDouble(value);
         } else if (tag.equalsIgnoreCase("timeForUntouchedInDevTest")) {
             timeForUntouchedInDevTest = getDouble(value);
         } else if (tag.equals("ignorerow")) {
@@ -85,7 +79,7 @@ public class Ticket {
                 value = value.replace(',', '.');
                 return Double.parseDouble(value);
             } catch (Exception e) {
-                ;
+               e.printStackTrace();
             }
         }
         return 0.;
@@ -102,22 +96,19 @@ public class Ticket {
     }
 
     public List<String> getValues() {
-        List<String> list = new ArrayList<String>();
-        list.add(id.toString());
+        List<String> list = new ArrayList<>();
+        list.add(id);
         list.add("" + project);
-        list.add("" + analysisStartDate);
+        list.add("" + progressStartDate);
         list.add("" + resolvedDate);
         list.add("" + closedDate);
         list.add("" + releasedDate);
-        list.add("" + timeInAnalysis);
         list.add("" + timeInProgress);
         list.add("" + timeInDevTest);
         list.add("" + timeInAcceptTest);
-        list.add("" + timeInWaitingForMerge);
-        list.add("" + timeInWaitingForStage);
+        list.add("" + timeInRC);
         list.add("" + timeInWaitingForRelease);
-
-        list.add("" + timeInAnalysisAfterTest);
+        list.add("" + timeInProgressAfterTest);
         list.add("" + timeForUntouchedInDevTest);
 
         list.add("" + rejectedDevTest);
@@ -150,12 +141,12 @@ public class Ticket {
         this.project = project;
     }
 
-    public DateTime getAnalysisStartDate() {
-        return analysisStartDate;
+    public DateTime getProgressStartDate() {
+        return progressStartDate;
     }
 
-    public void setAnalysisStartDate(DateTime analysisStartDate) {
-        this.analysisStartDate = analysisStartDate;
+    public void setProgressStartDate(DateTime progressStartDate) {
+        this.progressStartDate = progressStartDate;
     }
 
     public DateTime getResolvedDate() {
@@ -182,14 +173,6 @@ public class Ticket {
         this.releasedDate = releasedDate;
     }
 
-    public double getTimeInAnalysis() {
-        return timeInAnalysis;
-    }
-
-    public void setTimeInAnalysis(double timeInAnalysis) {
-        this.timeInAnalysis = timeInAnalysis;
-    }
-
     public double getTimeInProgress() {
         return timeInProgress;
     }
@@ -214,20 +197,12 @@ public class Ticket {
         this.timeInAcceptTest = timeInAcceptTest;
     }
 
-    public double getTimeInWaitingForMerge() {
-        return timeInWaitingForMerge;
+    public double getTimeInRC() {
+        return timeInRC;
     }
 
-    public void setTimeInWaitingForMerge(double timeInWaitingForMerge) {
-        this.timeInWaitingForMerge = timeInWaitingForMerge;
-    }
-
-    public double getTimeInWaitingForStage() {
-        return timeInWaitingForStage;
-    }
-
-    public void setTimeInWaitingForStage(double timeInWaitingForStage) {
-        this.timeInWaitingForStage = timeInWaitingForStage;
+    public void setTimeInRC(double timeInRC) {
+        this.timeInRC = timeInRC;
     }
 
     public double getTimeInWaitingForRelease() {
@@ -236,6 +211,22 @@ public class Ticket {
 
     public void setTimeInWaitingForRelease(double timeInWaitingForRelease) {
         this.timeInWaitingForRelease = timeInWaitingForRelease;
+    }
+
+    public double getTimeInProgressAfterTest() {
+        return timeInProgressAfterTest;
+    }
+
+    public void setTimeInProgressAfterTest(double timeInProgressAfterTest) {
+        this.timeInProgressAfterTest = timeInProgressAfterTest;
+    }
+
+    public double getTimeForUntouchedInDevTest() {
+        return timeForUntouchedInDevTest;
+    }
+
+    public void setTimeForUntouchedInDevTest(double timeForUntouchedInDevTest) {
+        this.timeForUntouchedInDevTest = timeForUntouchedInDevTest;
     }
 
     public boolean isRejectedDevTest() {
@@ -270,40 +261,22 @@ public class Ticket {
         this.ignoreRow = ignoreRow;
     }
 
-    public double getTimeInAnalysisAfterTest() {
-        return timeInAnalysisAfterTest;
-    }
-
-    public void setTimeInAnalysisAfterTest(double timeInAnalysisAfterTest) {
-        this.timeInAnalysisAfterTest = timeInAnalysisAfterTest;
-    }
-
-    public double getTimeForUntouchedInDevTest() {
-        return timeForUntouchedInDevTest;
-    }
-
-    public void setTimeForUntouchedInDevTest(double timeForUntouchedInDevTest) {
-        this.timeForUntouchedInDevTest = timeForUntouchedInDevTest;
-    }
-
     @Override
     public String toString() {
         return "Ticket{" +
                 "sheetRow=" + sheetRow +
                 ", id='" + id + '\'' +
                 ", project='" + project + '\'' +
-                ", analysisStartDate=" + analysisStartDate +
+                ", progressStartDate=" + progressStartDate +
                 ", resolvedDate=" + resolvedDate +
                 ", closedDate=" + closedDate +
                 ", releasedDate=" + releasedDate +
-                ", timeInAnalysis=" + timeInAnalysis +
                 ", timeInProgress=" + timeInProgress +
                 ", timeInDevTest=" + timeInDevTest +
                 ", timeInAcceptTest=" + timeInAcceptTest +
-                ", timeInWaitingForMerge=" + timeInWaitingForMerge +
-                ", timeInWaitingForStage=" + timeInWaitingForStage +
+                ", timeInRC=" + timeInRC +
                 ", timeInWaitingForRelease=" + timeInWaitingForRelease +
-                ", timeInAnalysisAfterTest=" + timeInAnalysisAfterTest +
+                ", timeInProgressAfterTest=" + timeInProgressAfterTest +
                 ", timeForUntouchedInDevTest=" + timeForUntouchedInDevTest +
                 ", rejectedDevTest=" + rejectedDevTest +
                 ", rejectedPoTest=" + rejectedPoTest +

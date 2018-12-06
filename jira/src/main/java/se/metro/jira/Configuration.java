@@ -3,9 +3,9 @@ package se.metro.jira;
 import java.util.Arrays;
 
 public class Configuration {
-    public String spreadsheetName;
-    public String jql;
-    public String[] projects;
+    private String spreadsheetName;
+    private String jql;
+    private String[] projects;
     
     public String getSpreadsheetName() {
         return spreadsheetName;

@@ -39,6 +39,7 @@ public class TimeUtil {
         double value = ((double)workHours)/8.;
         if (value < 0.)
             value = 0.;
+
         return value;
     }
 }
